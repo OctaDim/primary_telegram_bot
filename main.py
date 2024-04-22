@@ -1,59 +1,68 @@
 import logging
 import asyncio
-import json
-from aiogram import Bot, Dispatcher, F
+from datetime import datetime
+
+from aiogram import Dispatcher, Bot, types
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.filters import (Command,
-                             CommandStart)
+from aiogram.fsm.storage.memory import MemoryStorage
 
-from telegram.core.config.settings import TELEGRAM_BOT_CREDENTIALS
+from telegram.core.config.settings import BOT_CREDENTIALS
 
-from telegram.core.handlers.basic_handlers import (start_bot_handler,
-                                                   stop_bot_handler,
-                                                   get_message_echo_handler,
-                                                   get_start_run_go_commands_handler,
-                                                   get_photo_handler,
-                                                   get_hallo_message,
-                                                   get_json_message)
+from telegram.core.handlers_private.startup_stop_private_handlers import router_start_stop_bot_private
+from telegram.core.handlers_private.commands_private_handlers import  router_commands_private
+from telegram.core.handlers_private.text_private_handlers import  router_text_msg_private
+from telegram.core.handlers_private.image_private_handlers import  router_image_private
+from telegram.core.handlers_private.audio_private_handlers import  router_audio_private
+from telegram.core.handlers_private.echo_private_handler import router_echo_private
 
 
+
+logging.basicConfig(level=logging.DEBUG,
+                    format="%(asctime)s - %(levelname)s - %(name)s - "
+                           "(%(filename)s).%(funcName)s(%(lineno)d) - "
+                           "%(message)s")
+
+
+dp = Dispatcher(storage=MemoryStorage())
+dp["bot_started"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+dp.include_routers(router_start_stop_bot_private,
+                   router_commands_private,
+                   router_text_msg_private,
+                   router_image_private,
+                   router_audio_private,
+                   router_echo_private)
+
+
+# ALLOWED_UPDATES = ["message", "edited_message"]
+
+bot_commands_list = [
+    types.BotCommand(command="start", description="Command '/start'"),
+    types.BotCommand(command="free", description="Command '/free'"),
+    types.BotCommand(command="enroll", description="Command '/enroll'"),
+    types.BotCommand(command="payment", description="Command '/payment'"),
+    types.BotCommand(command="admin_chat", description="Command '/admin_chat'"),
+    types.BotCommand(command="portfolio", description="Command '/portfolio'"),
+    types.BotCommand(command="prices", description="Command '/prices'"),
+    types.BotCommand(command="contacts", description="Command '/contacts'")
+]
 
 async def main() -> None:
-    logging.basicConfig(level=logging.DEBUG,
-                        # stream=sys.stdout,
-                        format="%(asctime)s - %(levelname)s - %(name)s - "
-                               "(%(filename)s).%(funcName)s(%(lineno)d) - "
-                               "%(message)s")
 
-    bot = Bot(token=TELEGRAM_BOT_CREDENTIALS.bot_token,
+    bot = Bot(token=BOT_CREDENTIALS.bot_token,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    await bot.delete_webhook(drop_pending_updates=True)
 
-    dp = Dispatcher()
-
-    dp.startup.register(start_bot_handler)
-    dp.shutdown.register(stop_bot_handler)
-
-    dp.message.register(get_start_run_go_commands_handler,
-                        Command(commands=["start", "run", "go"]))
-
-    dp.message.register(get_start_run_go_commands_handler, CommandStart())
-
-    dp.message.register(get_hallo_message, F.text == "Hallo")
-
-    dp.message.register(get_json_message,
-                        Command(commands="json"))
-
-    dp.message.register(get_photo_handler, F.photo)
-
-    dp.message.register(get_message_echo_handler)
-
-
-
+    await bot.set_my_commands(commands=[*bot_commands_list],
+                              scope=types.BotCommandScopeAllPrivateChats())
+    # await bot.delete_my_commands(scope=types.BotCommandScopeAllPrivateChats())
 
 
     try:
-        await dp.start_polling(bot)
+        await dp.start_polling(
+            bot, allowed_updates=dp.resolve_used_update_types())
+        await dp.start_polling(bot, allowed_updates=ALLOWED_UPDATES)
     finally:
         await bot.session.close()
 
