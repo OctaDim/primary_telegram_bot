@@ -16,14 +16,16 @@ FULL_ENV_FILENAME = os.path.join(BASE_DIR, ".env")
 
 project_env_vars_dict = dotenv_values(FULL_ENV_FILENAME)
 
-TELEGRAM_BOT_CREDENTIALS = TelegramSettings(
+BOT_CREDENTIALS = TelegramSettings(
     bot_name=project_env_vars_dict.get("TELEGRAM_BOT_NAME"),
     user_name=project_env_vars_dict.get("TELEGRAM_USER_NAME"),
     user_id=project_env_vars_dict.get("TELEGRAM_USER_ID"),
     bot_token=project_env_vars_dict.get("TELEGRAM_BOT_TOKEN"))
 
 
+RESTRICTED_WORDS = {"fuck", "shit", "fucker", "asshole"}
 MAX_BOT_MSG_LENGTH = 4096
+BAN_DURATION = 35
 
 
 
