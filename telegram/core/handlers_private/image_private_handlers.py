@@ -1,7 +1,7 @@
 from aiogram import Router, Bot, F
 from aiogram.types import Message
-from telegram.core.config.settings import BOT_CREDENTIALS
 
+from telegram.core.filters.chat_types_filter import ChatTypesFilter
 from utils_custom.dir_utils import create_dir_if_not_exists
 from utils_custom.file_utils import (basename_in_full_filename,
                                      compose_full_filename)
@@ -9,6 +9,7 @@ from utils_custom.file_utils import (basename_in_full_filename,
 
 
 router_image_private = Router()
+router_image_private.message.filter(ChatTypesFilter(["private"]))
 
 @router_image_private.message(F.photo)
 async def get_image_handler(message: Message, bot: Bot):
